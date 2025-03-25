@@ -76,10 +76,34 @@
     animation: slideUp 0.6s ease-out forwards;
   }
   
+  .slide-down {
+    transform: translateY(-20px);
+    opacity: 0;
+    animation: slideDown 0.6s ease-out forwards;
+  }
+  
+  .slide-left {
+    transform: translateX(20px);
+    opacity: 0;
+    animation: slideLeft 0.6s ease-out forwards;
+  }
+  
+  .slide-right {
+    transform: translateX(-20px);
+    opacity: 0;
+    animation: slideRight 0.6s ease-out forwards;
+  }
+  
   .scale-in {
     transform: scale(0.95);
     opacity: 0;
     animation: scaleIn 0.6s ease-out forwards;
+  }
+  
+  .scale-up {
+    transform: scale(0.8) translateY(10px);
+    opacity: 0;
+    animation: scaleUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 }
 
@@ -96,6 +120,27 @@
   }
 }
 
+@keyframes slideDown {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideLeft {
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideRight {
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 @keyframes scaleIn {
   to {
     transform: scale(1);
@@ -103,6 +148,14 @@
   }
 }
 
+@keyframes scaleUp {
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Page transition animations */
 .page-transition-enter {
   opacity: 0;
   transform: translateY(10px);
@@ -123,4 +176,31 @@
   opacity: 0;
   transform: translateY(-10px);
   transition: opacity 300ms, transform 300ms;
+}
+
+/* Additional animations for dashboard panels */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 rgba(59, 130, 246, 0);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s infinite;
+}
+
+@keyframes floatUp {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: floatUp 6s infinite ease-in-out;
 }

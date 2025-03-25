@@ -6,6 +6,7 @@ export const usePageTransition = () => {
   const [displayLocation, setDisplayLocation] = useState('');
   const [transitionStage, setTransitionStage] = useState('fadeIn');
   const location = useLocation();
+  const [transitionDuration, setTransitionDuration] = useState(300); // Configurable duration
 
   useEffect(() => {
     if (location.pathname !== displayLocation) {
@@ -18,13 +19,22 @@ export const usePageTransition = () => {
       const timeout = setTimeout(() => {
         setTransitionStage('fadeIn');
         setDisplayLocation(location.pathname);
-      }, 300);
+      }, transitionDuration);
 
       return () => clearTimeout(timeout);
     }
-  }, [transitionStage, location.pathname]);
+  }, [transitionStage, location.pathname, transitionDuration]);
 
-  return { transitionStage, displayLocation };
+  // Allow custom configuration of the transition
+  const configureTransition = (duration = 300) => {
+    setTransitionDuration(duration);
+  };
+
+  return { 
+    transitionStage, 
+    displayLocation,
+    configureTransition
+  };
 };
 
 export default usePageTransition;

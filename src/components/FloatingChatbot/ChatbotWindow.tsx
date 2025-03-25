@@ -1,11 +1,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Pill, Stethoscope, Heart, BrainCircuit } from 'lucide-react';
+import { X, Send, Pill, Stethoscope, Heart, BrainCircuit, ArrowUpRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import TransitionWrapper from '@/components/TransitionWrapper';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface ChatbotWindowProps {
   isOpen: boolean;
@@ -14,7 +15,7 @@ interface ChatbotWindowProps {
   apiKey: string;
 }
 
-type MessageType = 'user' | 'assistant' | 'system';
+type MessageType = 'user' | 'assistant' | 'system' | 'redirect';
 
 interface Message {
   id: string;
@@ -54,10 +55,16 @@ const ChatbotWindow = ({ isOpen, onClose, className, apiKey }: ChatbotWindowProp
       content: 'Treatment options and self-care advice',
       category: 'treatment',
     },
+    {
+      id: '6',
+      type: 'redirect',
+      content: 'Talk to AI Assistant in full screen mode',
+    },
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isOpen && textareaRef.current) {
@@ -68,6 +75,11 @@ const ChatbotWindow = ({ isOpen, onClose, className, apiKey }: ChatbotWindowProp
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const handleRedirect = () => {
+    onClose();
+    navigate('/chat');
+  };
 
   const handleSend = async () => {
     if (input.trim() === '') return;
@@ -180,7 +192,7 @@ const ChatbotWindow = ({ isOpen, onClose, className, apiKey }: ChatbotWindowProp
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b bg-primary/5 px-4 py-3">
+      <div className="flex items-center justify-between border-b bg-gradient-to-r from-primary/20 to-primary/5 px-4 py-3">
         <div className="flex items-center gap-2">
           <BrainCircuit className="h-5 w-5 text-primary" />
           <h2 className="font-semibold">Health Assistant</h2>
@@ -189,48 +201,59 @@ const ChatbotWindow = ({ isOpen, onClose, className, apiKey }: ChatbotWindowProp
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="h-8 w-8 rounded-full"
+          className="h-8 w-8 rounded-full hover:bg-gray-200/50"
         >
           <X className="h-4 w-4" />
         </Button>
       </div>
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-card to-background/50">
         {messages.map((message) => (
           <div
             key={message.id}
             className={cn(
               "mb-4 max-w-[85%]",
-              message.type === 'user' ? "ml-auto" : "mr-auto"
+              message.type === 'user' ? "ml-auto" : "mr-auto",
+              message.type === 'redirect' ? "mx-auto max-w-[100%] w-full" : ""
             )}
           >
-            <div
-              className={cn(
-                "rounded-xl p-3",
-                message.type === 'user' 
-                  ? "bg-primary text-primary-foreground"
-                  : message.type === 'system'
-                  ? "bg-secondary text-secondary-foreground"
-                  : message.category === 'disease'
-                  ? "bg-amber-100 text-amber-800"
-                  : message.category === 'medicine'
-                  ? "bg-blue-100 text-blue-800"
-                  : message.category === 'treatment'
-                  ? "bg-green-100 text-green-800"
-                  : "bg-card border"
-              )}
-            >
-              {message.category && (
-                <div className="mb-1 flex items-center gap-1 text-xs font-medium">
-                  {message.category === 'disease' && <Stethoscope className="h-3 w-3" />}
-                  {message.category === 'medicine' && <Pill className="h-3 w-3" />}
-                  {message.category === 'treatment' && <Heart className="h-3 w-3" />}
-                  <span className="capitalize">{message.category}</span>
-                </div>
-              )}
-              <div>{message.content}</div>
-            </div>
+            {message.type === 'redirect' ? (
+              <button
+                onClick={handleRedirect}
+                className="w-full bg-gradient-to-r from-primary/20 to-primary/10 hover:from-primary/30 hover:to-primary/20 text-primary-foreground rounded-xl p-3 flex items-center justify-center gap-2 transition-all duration-200 hover:shadow-md group"
+              >
+                {message.content}
+                <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+              </button>
+            ) : (
+              <div
+                className={cn(
+                  "rounded-xl p-3",
+                  message.type === 'user' 
+                    ? "bg-primary text-primary-foreground"
+                    : message.type === 'system'
+                    ? "bg-secondary text-secondary-foreground"
+                    : message.category === 'disease'
+                    ? "bg-amber-100 text-amber-800 border border-amber-200"
+                    : message.category === 'medicine'
+                    ? "bg-blue-100 text-blue-800 border border-blue-200"
+                    : message.category === 'treatment'
+                    ? "bg-green-100 text-green-800 border border-green-200"
+                    : "bg-card border"
+                )}
+              >
+                {message.category && (
+                  <div className="mb-1 flex items-center gap-1 text-xs font-medium">
+                    {message.category === 'disease' && <Stethoscope className="h-3 w-3" />}
+                    {message.category === 'medicine' && <Pill className="h-3 w-3" />}
+                    {message.category === 'treatment' && <Heart className="h-3 w-3" />}
+                    <span className="capitalize">{message.category}</span>
+                  </div>
+                )}
+                <div className="text-sm">{message.content}</div>
+              </div>
+            )}
           </div>
         ))}
         
@@ -248,7 +271,7 @@ const ChatbotWindow = ({ isOpen, onClose, className, apiKey }: ChatbotWindowProp
       </div>
 
       {/* Input area */}
-      <div className="border-t p-3">
+      <div className="border-t p-3 bg-card/50">
         <div className="flex items-center gap-2">
           <Textarea
             ref={textareaRef}
@@ -256,14 +279,17 @@ const ChatbotWindow = ({ isOpen, onClose, className, apiKey }: ChatbotWindowProp
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Describe your symptoms or ask a health question..."
-            className="min-h-[60px] resize-none"
+            className="min-h-[60px] resize-none bg-background/80 border-input focus:ring-2 focus:ring-primary/30 focus:border-primary/50 text-sm"
             disabled={isLoading}
           />
           <Button 
             onClick={handleSend} 
             disabled={!input.trim() || isLoading}
             size="icon"
-            className="h-10 w-10 shrink-0"
+            className={cn(
+              "h-10 w-10 shrink-0 rounded-full",
+              !input.trim() ? "opacity-50" : "bg-primary hover:bg-primary/90",
+            )}
           >
             <Send className="h-4 w-4" />
           </Button>

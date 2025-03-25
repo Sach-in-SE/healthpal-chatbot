@@ -5,11 +5,13 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import TransitionWrapper from '@/components/TransitionWrapper';
+import { toast } from 'sonner';
 
 interface ChatbotWindowProps {
   isOpen: boolean;
   onClose: () => void;
   className?: string;
+  apiKey: string;
 }
 
 type MessageType = 'user' | 'assistant' | 'system';
@@ -21,7 +23,7 @@ interface Message {
   category?: 'disease' | 'medicine' | 'treatment';
 }
 
-const ChatbotWindow = ({ isOpen, onClose, className }: ChatbotWindowProps) => {
+const ChatbotWindow = ({ isOpen, onClose, className, apiKey }: ChatbotWindowProps) => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -67,7 +69,7 @@ const ChatbotWindow = ({ isOpen, onClose, className }: ChatbotWindowProps) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (input.trim() === '') return;
     
     // Add user message
@@ -81,69 +83,83 @@ const ChatbotWindow = ({ isOpen, onClose, className }: ChatbotWindowProps) => {
     setInput('');
     setIsLoading(true);
     
-    // Simulate AI response with different categories
-    setTimeout(() => {
-      let responseCategory: 'disease' | 'medicine' | 'treatment' | undefined;
-      let responseContent = '';
-      
+    try {
+      // Determine the category based on input content
       const inputLower = input.toLowerCase();
+      let category: 'disease' | 'medicine' | 'treatment' | undefined;
       
       if (inputLower.includes('headache') || inputLower.includes('fever') || inputLower.includes('pain') || 
           inputLower.includes('symptoms') || inputLower.includes('feeling')) {
-        responseCategory = 'disease';
-        responseContent = getSymptomResponse(inputLower);
+        category = 'disease';
       } else if (inputLower.includes('medicine') || inputLower.includes('drug') || inputLower.includes('pill') ||
                 inputLower.includes('medication')) {
-        responseCategory = 'medicine';
-        responseContent = getMedicineResponse(inputLower);
+        category = 'medicine';
       } else if (inputLower.includes('treatment') || inputLower.includes('therapy') || inputLower.includes('cure') ||
                 inputLower.includes('care') || inputLower.includes('heal')) {
-        responseCategory = 'treatment';
-        responseContent = getTreatmentResponse(inputLower);
-      } else {
-        responseContent = "I'm not sure I understand. Could you provide more details about your health concern? You can ask me about symptoms, medicines, or treatments.";
+        category = 'treatment';
       }
       
+      // Generate appropriate system message based on the category
+      let systemMessage = "You are a helpful AI health assistant. Provide accurate medical information. Always include a disclaimer that you are not a replacement for professional medical advice.";
+      if (category === 'disease') {
+        systemMessage += " Focus on potential conditions related to the described symptoms.";
+      } else if (category === 'medicine') {
+        systemMessage += " Focus on general information about medications for common conditions.";
+      } else if (category === 'treatment') {
+        systemMessage += " Focus on general treatment options and self-care advice for common conditions.";
+      }
+      
+      // Make API request to OpenAI
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemMessage },
+            { role: 'user', content: input }
+          ],
+          max_tokens: 500
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        toast.error('Error communicating with AI service');
+        throw new Error(`API Error: ${errorData.error?.message || 'Unknown error'}`);
+      }
+      
+      const data = await response.json();
+      const aiResponse = data.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+      
+      // Add AI response
       const assistantMessage: Message = {
         id: Date.now().toString(),
         type: 'assistant',
-        content: responseContent,
-        category: responseCategory,
+        content: aiResponse,
+        category: category
       };
       
       setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error:', error);
+      
+      // Add error message
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: "I'm sorry, I encountered an error processing your request. Please try again later."
+      };
+      
+      setMessages((prev) => [...prev, errorMessage]);
+      toast.error('An error occurred while processing your request');
+    } finally {
       setIsLoading(false);
-    }, 1500);
-  };
-
-  const getSymptomResponse = (input: string): string => {
-    const responses = [
-      "Based on the symptoms you've described, this could be related to several conditions. Common possibilities include a viral infection, tension headache, or mild dehydration. Would you like me to tell you more about any of these?",
-      "Your symptoms might suggest a common cold or seasonal allergies. Do you have any other symptoms like congestion, sneezing, or itchy eyes?",
-      "These symptoms could be associated with stress or anxiety. Have you been experiencing increased stress lately?",
-      "The symptoms you've mentioned could indicate a minor infection. If they persist for more than a few days or worsen, I recommend consulting with a healthcare provider.",
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
-
-  const getMedicineResponse = (input: string): string => {
-    const responses = [
-      "For mild pain relief, over-the-counter options like acetaminophen (Tylenol) or ibuprofen (Advil, Motrin) are commonly recommended. Always follow the dosage instructions on the packaging.",
-      "There are several medications that might help with those symptoms. Antihistamines like loratadine (Claritin) or cetirizine (Zyrtec) are often used for allergy symptoms.",
-      "For that condition, medications may include both over-the-counter and prescription options. It's best to consult with a healthcare provider for personalized recommendations.",
-      "Remember that medications should be taken as directed, and it's important to be aware of potential side effects or interactions with other medications you may be taking.",
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
-
-  const getTreatmentResponse = (input: string): string => {
-    const responses = [
-      "Treatment options may include rest, staying hydrated, and over-the-counter medications for symptom relief. If symptoms persist or worsen, consult a healthcare provider.",
-      "Self-care measures like applying a cold compress, getting adequate rest, and maintaining proper hydration can help manage these symptoms.",
-      "Besides medication, lifestyle modifications such as regular exercise, stress management techniques, and proper nutrition may help address the underlying causes.",
-      "For this condition, a combination of medical treatment and lifestyle changes is often recommended. A healthcare provider can develop a personalized treatment plan.",
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

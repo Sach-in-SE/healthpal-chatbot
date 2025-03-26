@@ -30,12 +30,7 @@ const Features = () => {
       icon: <Mic className="w-5 h-5" />,
       delay: 400,
     },
-    {
-      title: 'Medication Reminders',
-      description: 'Never miss a dose with customizable medication reminders and schedules.',
-      icon: <Clock className="w-5 h-5" />,
-      delay: 500,
-    },
+    
   ];
 
   return (

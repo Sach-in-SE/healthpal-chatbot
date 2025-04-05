@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
-    <footer className="bg-gradient-to-t from-secondary/40 to-background py-16 px-6 md:px-12 lg:px-24">
+    <footer className=" py-16 px-6 md:px-12 lg:px-24 bg-primary/20">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="md:col-span-2">
@@ -79,7 +79,7 @@ const Footer = () => {
           </div>
         </div>
         
-        <div className="border-t border-border mt-12 pt-8 text-center text-muted-foreground text-sm">
+        <div className="border-t border-gray-400 mt-12 pt-8 text-center text-muted-foreground text-sm">
           <p>© {new Date().getFullYear()} HealthPal. All rights reserved.</p>
           <p className="mt-2">Disclaimer: This AI health assistant is for informational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment.</p>
         </div>
